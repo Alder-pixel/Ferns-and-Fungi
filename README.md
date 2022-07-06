@@ -1,4 +1,5 @@
 # Ferns-and-Fungi
 
-Data:
-  * 
+## Data
+### Pictures
+The folder full of the raw images. 

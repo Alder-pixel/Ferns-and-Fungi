@@ -6,7 +6,9 @@ OUTPUTS:=$(ROOT_DIR)/Data/Output/
 analyze_images:
 	python $(ROOT_DIR)/Scripts/analyze_images.py $(ROOT_DIR)
 
-
+# Create graphs
+create_graphs:
+	python $(ROOT_DIR)/Scripts/create_graphs.py $(INPUTS) $(OUTPUTS)
 
 
 
