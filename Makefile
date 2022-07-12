@@ -1,14 +1,16 @@
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))/
-INPUTS:=$(ROOT_DIR)/Data/Input/
-OUTPUTS:=$(ROOT_DIR)/Data/Output/
+INPUTS:=$(ROOT_DIR)Data/Input/
+OUTPUTS:=$(ROOT_DIR)Data/Output/
 
 # Analyze images
 analyze_images:
-	python $(ROOT_DIR)/Scripts/analyze_images.py $(ROOT_DIR) "No"
+	python $(ROOT_DIR)Scripts/analyze_images.py $(ROOT_DIR) "No"
+analyze_images_full:
+	python $(ROOT_DIR)Scripts/analyze_images.py $(ROOT_DIR) "Yes"
 
 # Create graphs
 create_graphs:
-	python $(ROOT_DIR)/Scripts/create_graphs.py $(INPUTS) $(OUTPUTS)
+	python $(ROOT_DIR)Scripts/create_graphs.py $(INPUTS) $(OUTPUTS)
 
 
 

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import argparse
 
+
 def display_data(inputs, outputs):
     fern_data = pd.read_csv(outputs + "fern_growth.csv")
 
@@ -13,22 +14,117 @@ def display_data(inputs, outputs):
     print(fern_data)
     print(fern_data.groupby("Fungus").mean())
     print(fern_data.groupby("Inoculation time").mean())
-    print(fern_data.groupby(["Fungus", "Inoculation time",
-                             "Day of Picture"], as_index=False).mean())
+    print(
+        fern_data.groupby(
+            ["Fungus", "Inoculation time", "Day of Picture"], as_index=False
+        ).mean()
+    )
+
+def create_figure1A(inputs, outputs):
+    fern_data = pd.read_csv(outputs + "fern_growth.csv")
+    fern_data = fern_data[fern_data["Replicate Number"] != "R4"]
+
+    df1 = fern_data.groupby(["Inoculation time", "Day of Picture"], as_index=False).mean()
+    m1 = df1["Inoculation time"] == "I0"
+    m2 = df1["Inoculation time"] == "I7"
+    df2 = fern_data.replace({
+        "GBAus27b+" : "GBAus27b",
+        "GBAus27b-" : "GBAus27b",
+        "NVP64+" : "NVP64",
+        "NVP64-" : "NVP64",
+    })
+    df2 = df2.groupby(["Fungus","Day of Picture"], as_index=False).mean()
+    m3 = df2["Fungus"] == "GBAus27b"
+    m4 = df2["Fungus"] == "NVP64"
+    df3 = fern_data.replace({
+        "GBAus27b+" : "+",
+        "GBAus27b-" : "-",
+        "NVP64+" : "+",
+        "NVP64-" : "-",
+    })
+    df3 = df3.groupby(["Fungus","Day of Picture"], as_index=False).mean()
+    m5 = df3["Fungus"] == "+"
+    m6 = df3["Fungus"] == "-"
+    m7 = df3["Fungus"] == "control"
+
+    plt.figure(figsize=(20,10))
+    plt.plot(
+        df1[m1]["Day of Picture"],
+        df1[m1]["Area"],
+        color="Blue",
+        ls="-",
+        lw=3,
+        label="Inoculated T0",
+    )
+    plt.plot(
+        df1[m2]["Day of Picture"],
+        df1[m2]["Area"],
+        color="Blue",
+        ls="--",
+        lw=3,
+        label="Inoculated T7",
+    )
+    plt.plot(
+        df2[m3]["Day of Picture"],
+        df2[m3]["Area"],
+        color = "Green",
+        ls="-",
+        lw=3,
+        label="GBAus27b"
+    )
+    plt.plot(
+        df2[m4]["Day of Picture"],
+        df2[m4]["Area"],
+        color = "Green",
+        ls="--",
+        lw=3,
+        label="NVP64"
+    )
+    plt.plot(
+        df3[m5]["Day of Picture"],
+        df3[m5]["Area"],
+        color = "Goldenrod",
+        ls="-",
+        lw=3,
+        label="With Endobacteria"
+    )
+    plt.plot(
+        df3[m6]["Day of Picture"],
+        df3[m6]["Area"],
+        color = "Goldenrod",
+        ls="--",
+        lw=3,
+        label="Without Endobacteria"
+    )
+    plt.plot(
+        df3[m7]["Day of Picture"],
+        df3[m7]["Area"],
+        color="black",
+        ls="-",
+        lw=3,
+        label="Control"
+    )
+
+    plt.title("Fern Growth Among Different Groups", size=32)
+    plt.ylabel("Area cm$^{2}$", size=22)
+    plt.xlabel("Day after sowing", size=22)
+    plt.legend(prop={'size':18})
+
+    plt.savefig(outputs + "Graphs/figure1A.png", dpi=400)
+
 
 def create_figure1(inputs, outputs):
     fern_data = pd.read_csv(outputs + "fern_growth.csv")
     fern_data = fern_data[fern_data["Replicate Number"] != "R4"]
-    df = fern_data.groupby(["Fungus", "Inoculation time",
-                            "Day of Picture"], as_index = False).mean()
-    df2 = fern_data.groupby(["Fungus"], as_index = False).mean()
+    df = fern_data.groupby(
+        ["Fungus", "Inoculation time", "Day of Picture"], as_index=False
+    ).mean()
+    df2 = fern_data.groupby(["Fungus", "Day of Picture"], as_index=False).mean()
 
-    plt.figure(figsize=(20,10))
+    plt.figure(figsize=(20, 10))
 
     # Create the masks
-    print("Before first mask")
     m1 = (df["Fungus"] == "GBAus27b+") & (df["Inoculation time"] == "I0")
-    print("After first mask")
     m2 = (df["Fungus"] == "GBAus27b+") & (df["Inoculation time"] == "I7")
     m3 = (df["Fungus"] == "GBAus27b-") & (df["Inoculation time"] == "I0")
     m4 = (df["Fungus"] == "GBAus27b-") & (df["Inoculation time"] == "I7")
@@ -36,27 +132,101 @@ def create_figure1(inputs, outputs):
     m6 = (df["Fungus"] == "NVP64+") & (df["Inoculation time"] == "I7")
     m7 = (df["Fungus"] == "NVP64-") & (df["Inoculation time"] == "I0")
     m8 = (df["Fungus"] == "NVP64-") & (df["Inoculation time"] == "I7")
+    m9 = df2["Fungus"] == "control"
 
     # Create the plots
-    plt.plot(df[m1]["Day of Picture"], df[m1]["Area"], ls="-", alpha=1,
-             color="red", label="GBAus27b+ I0")
-    plt.plot(df[m2]["Day of Picture"], df[m2]["Area"], ls="-", alpha=.7,
-             color="red", label="GBAus27b+ I7")
-    plt.plot(df[m3]["Day of Picture"], df[m3]["Area"], ls="--", alpha=1,
-             color="red", label="GBAus27b- I0")
-    plt.plot(df[m4]["Day of Picture"], df[m4]["Area"], ls="--", alpha=.7,
-             color="red", label="GBAus27b- I7")
-    plt.plot(df[m5]["Day of Picture"], df[m5]["Area"], ls="-", alpha=1,
-             color="purple", label="NVP64+ I0")
-    plt.plot(df[m6]["Day of Picture"], df[m6]["Area"], ls="-", alpha=.7,
-             color="purple", label="NVP64+ I7")
-    plt.plot(df[m7]["Day of Picture"], df[m7]["Area"], ls="--", alpha=1,
-             color="purple", label="NVP64- I0")
-    plt.plot(df[m8]["Day of Picture"], df[m8]["Area"], ls="--", alpha=.7,
-             color="purple", label="NVP64- I7")
-    plt.legend()
+    plt.plot(
+        df[m1]["Day of Picture"],
+        df[m1]["Area"],
+        ls="-",
+        color="red",
+        label="GBAus27b+ I0",
+        lw=5,
+    )
+    plt.plot(
+        df[m2]["Day of Picture"],
+        df[m2]["Area"],
+        ls="-",
+        color="red",
+        label="GBAus27b+ I7",
+        lw=3,
+    )
+    plt.plot(
+        df[m3]["Day of Picture"],
+        df[m3]["Area"],
+        ls="--",
+        color="red",
+        label="GBAus27b- I0",
+        lw=5,
+    )
+    plt.plot(
+        df[m4]["Day of Picture"],
+        df[m4]["Area"],
+        ls="--",
+        color="red",
+        label="GBAus27b- I7",
+        lw=2,
+    )
+    plt.plot(
+        df[m5]["Day of Picture"],
+        df[m5]["Area"],
+        ls="-",
+        color="purple",
+        label="NVP64+ I0",
+        lw=5,
+    )
+    plt.plot(
+        df[m6]["Day of Picture"],
+        df[m6]["Area"],
+        ls="-",
+        color="purple",
+        label="NVP64+ I7",
+        lw=2,
+    )
+    plt.plot(
+        df[m7]["Day of Picture"],
+        df[m7]["Area"],
+        ls="--",
+        color="purple",
+        label="NVP64- I0",
+        lw=5,
+    )
+    plt.plot(
+        df[m8]["Day of Picture"],
+        df[m8]["Area"],
+        ls="--",
+        color="purple",
+        label="NVP64- I7",
+        lw = 3
+    )
+    plt.plot(
+        df2[m9]["Day of Picture"],
+        df2[m9]["Area"],
+        ls = ":",
+        color = "black",
+        label = "Control",
+        lw = 3
+    )
 
-    plt.savefig(outputs + "figure1.png", dpi=400)
+    plt.title("Fern Growth Among Different Groups", size=32)
+    plt.ylabel("Area (cm^2)", size=22)
+    plt.xlabel("Day after sowing", size=22)
+    plt.legend(prop={'size':18})
+
+    plt.savefig(outputs + "Graphs/figure1.png", dpi=400)
+
+def create_figure2(inputs, outputs):
+    fern_data = pd.read_csv(outputs + "fern_growth.csv")
+    fern_data = fern_data[fern_data["Replicate Number"] != "R4"]
+    fern_data.fillna("none", inplace=True)
+    df = fern_data.groupby("Endobacteria", as_index=False).mean()
+
+    plt.figure(figsize=(7.5,7.5))
+    plt.bar(["With Endobacteria", "Without Endobacteria","Control"], df["Area"])
+    plt.ylabel("Area (cm^2)", size=18)
+    plt.xlabel("Endobacteria Status", size=18)
+    plt.title("Effect of Fungus Endobacteria on Fern Growth", size=22)
+    plt.savefig(outputs + "Graphs/figure2.png", dpi=400)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -66,5 +236,7 @@ if __name__ == "__main__":
     inputs = args.inputs
     outputs = args.outputs
 
-    display_data(inputs, outputs)
     create_figure1(inputs, outputs)
+    create_figure2(inputs, outputs)
+    create_figure1A(inputs, outputs)
+
