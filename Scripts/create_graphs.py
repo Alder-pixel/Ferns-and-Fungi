@@ -20,6 +20,40 @@ def display_data(inputs, outputs):
         ).mean()
     )
 
+def create_figure2A(inputs, outputs):
+    fern_data = pd.read_csv(outputs + "fern_growth.csv")
+    fern_data = fern_data[fern_data["Replicate Number"] != "R4"]
+    df1 = fern_data.fillna("Control")
+    df2 = df1.groupby("Endobacteria", as_index=False).mean()
+    df2.replace({"+":"Endobacteria Present", "-":"Endobacteria Absent"},
+                inplace=True)
+    plt.figure(figsize=(20,7.5))
+    plt.subplot(1,3,1)
+    plt.bar(df2["Endobacteria"], df2["Area"])
+    plt.xlabel("Endobacteria Status", size=22)
+    plt.ylabel("Average Coverage cm$^{2}$", size=22)
+
+    df3 = df1.groupby("Inoculation time", as_index=False).mean()
+    df3.replace({"I0":"Day 0","I7":"Day 7","Control":"Never"}, inplace=True)
+    plt.subplot(1,3,2)
+    plt.bar(df3["Inoculation time"], df3["Area"])
+    plt.xlabel("Time of Inoculation", size=22)
+    # plt.ylabel("Average Coverage cm$^{2}$", size=22)
+
+    df4 = df1.replace(
+        {"GBAus27b+":"GBAus27b",
+         "GBAus27b-":"GBAus27b",
+         "control":"None",
+         "NVP64+":"NVP64",
+         "NVP64-":"NVP64"})
+    df4 = df4.groupby("Fungus", as_index=False).mean()
+    plt.subplot(1,3,3)
+    plt.bar(df4["Fungus"], df4["Area"])
+    plt.xlabel("Fungus Inoculated With", size=22)
+
+    plt.suptitle("Effect of different factors on fern growth rate",size=32)
+    plt.savefig(outputs + "Graphs/figure2A.png", dpi=400)
+
 def create_figure1A(inputs, outputs):
     fern_data = pd.read_csv(outputs + "fern_growth.csv")
     fern_data = fern_data[fern_data["Replicate Number"] != "R4"]
@@ -209,7 +243,7 @@ def create_figure1(inputs, outputs):
     )
 
     plt.title("Fern Growth Among Different Groups", size=32)
-    plt.ylabel("Area (cm^2)", size=22)
+    plt.ylabel("Area cm$^{2}$", size=22)
     plt.xlabel("Day after sowing", size=22)
     plt.legend(prop={'size':18})
 
@@ -223,7 +257,7 @@ def create_figure2(inputs, outputs):
 
     plt.figure(figsize=(7.5,7.5))
     plt.bar(["With Endobacteria", "Without Endobacteria","Control"], df["Area"])
-    plt.ylabel("Area (cm^2)", size=18)
+    plt.ylabel("Area cm$^{2}$", size=18)
     plt.xlabel("Endobacteria Status", size=18)
     plt.title("Effect of Fungus Endobacteria on Fern Growth", size=22)
     plt.savefig(outputs + "Graphs/figure2.png", dpi=400)
@@ -239,4 +273,4 @@ if __name__ == "__main__":
     create_figure1(inputs, outputs)
     create_figure2(inputs, outputs)
     create_figure1A(inputs, outputs)
-
+    create_figure2A(inputs, outputs)
