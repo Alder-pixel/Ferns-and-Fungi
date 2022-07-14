@@ -20,68 +20,113 @@ def display_data(inputs, outputs):
         ).mean()
     )
 
+
+def create_figure3A(inputs, outputs):
+    fern_data = pd.read_csv(outputs + "fern_growth.csv")
+    fern_data["Group"] = fern_data["Fungus"] + "_" + fern_data["Inoculation time"]
+    fern_data.fillna("Control", inplace=True)
+    df1 = fern_data.groupby(["Group", "Replicate Number"], as_index=False).mean()
+
+    m1 = df1["Replicate Number"] == "R1"
+    m2 = df1["Replicate Number"] == "R2"
+    m3 = df1["Replicate Number"] == "R3"
+    m4 = df1["Replicate Number"] == "R4"
+
+    plt.figure(figsize=(15, 5))
+    plt.scatter(df[m1]["Group"], df1[m1]["Area"], color="black", label="Replicate 1-3")
+    plt.scatter(df[m2]["Group"], df1[m2]["Area"], color="black")
+    plt.scatter(df[m3]["Group"], df1[m3]["Area"], color="black")
+    plt.scatter(
+        df[m4]["Group"],
+        df1[m4]["Area"],
+        color="red",
+        marker="x",
+        s=90,
+        label="Replicate 4",
+    )
+
+    plt.legend()
+    plt.xlabel("Group", size=22)
+    plt.ylabel("Avg Coverage cm$^{2}$", size=22)
+    plt.title("Replicate 4 was dropped", size=22)
+
+    plt.savefig(outputs + "Graphs/figure3A.png", dpi=400)
+
+
 def create_figure2A(inputs, outputs):
     fern_data = pd.read_csv(outputs + "fern_growth.csv")
     fern_data = fern_data[fern_data["Replicate Number"] != "R4"]
     df1 = fern_data.fillna("Control")
     df2 = df1.groupby("Endobacteria", as_index=False).mean()
-    df2.replace({"+":"Endobacteria Present", "-":"Endobacteria Absent"},
-                inplace=True)
-    plt.figure(figsize=(20,7.5))
-    plt.subplot(1,3,1)
+    df2.replace({"+": "Present", "-": "Absent"}, inplace=True)
+    plt.figure(figsize=(20, 7.5))
+    plt.subplot(1, 3, 1)
     plt.bar(df2["Endobacteria"], df2["Area"])
     plt.xlabel("Endobacteria Status", size=22)
     plt.ylabel("Average Coverage cm$^{2}$", size=22)
+    plt.ylim([0, 6.5])  # MAGIC: Will need to change as more data comes in.
 
     df3 = df1.groupby("Inoculation time", as_index=False).mean()
-    df3.replace({"I0":"Day 0","I7":"Day 7","Control":"Never"}, inplace=True)
-    plt.subplot(1,3,2)
+    df3.replace({"I0": "Day 0", "I7": "Day 7", "Control": "Never"}, inplace=True)
+    plt.subplot(1, 3, 2)
     plt.bar(df3["Inoculation time"], df3["Area"])
     plt.xlabel("Time of Inoculation", size=22)
     # plt.ylabel("Average Coverage cm$^{2}$", size=22)
+    plt.ylim([0, 6.5])  # MAGIC: Will need to change as more data comes in.
 
     df4 = df1.replace(
-        {"GBAus27b+":"GBAus27b",
-         "GBAus27b-":"GBAus27b",
-         "control":"None",
-         "NVP64+":"NVP64",
-         "NVP64-":"NVP64"})
+        {
+            "GBAus27b+": "GBAus27b",
+            "GBAus27b-": "GBAus27b",
+            "control": "None",
+            "NVP64+": "NVP64",
+            "NVP64-": "NVP64",
+        }
+    )
     df4 = df4.groupby("Fungus", as_index=False).mean()
-    plt.subplot(1,3,3)
+    plt.subplot(1, 3, 3)
     plt.bar(df4["Fungus"], df4["Area"])
-    plt.xlabel("Fungus Inoculated With", size=22)
+    plt.xlabel("Plates Inoculated With", size=22)
+    plt.ylim([0, 6.5])  # MAGIC: Will need to change as more data comes in.
 
-    plt.suptitle("Effect of different factors on fern growth rate",size=32)
+    plt.suptitle("Effect of different factors on fern growth rate", size=32)
     plt.savefig(outputs + "Graphs/figure2A.png", dpi=400)
+
 
 def create_figure1A(inputs, outputs):
     fern_data = pd.read_csv(outputs + "fern_growth.csv")
     fern_data = fern_data[fern_data["Replicate Number"] != "R4"]
 
-    df1 = fern_data.groupby(["Inoculation time", "Day of Picture"], as_index=False).mean()
+    df1 = fern_data.groupby(
+        ["Inoculation time", "Day of Picture"], as_index=False
+    ).mean()
     m1 = df1["Inoculation time"] == "I0"
     m2 = df1["Inoculation time"] == "I7"
-    df2 = fern_data.replace({
-        "GBAus27b+" : "GBAus27b",
-        "GBAus27b-" : "GBAus27b",
-        "NVP64+" : "NVP64",
-        "NVP64-" : "NVP64",
-    })
-    df2 = df2.groupby(["Fungus","Day of Picture"], as_index=False).mean()
+    df2 = fern_data.replace(
+        {
+            "GBAus27b+": "GBAus27b",
+            "GBAus27b-": "GBAus27b",
+            "NVP64+": "NVP64",
+            "NVP64-": "NVP64",
+        }
+    )
+    df2 = df2.groupby(["Fungus", "Day of Picture"], as_index=False).mean()
     m3 = df2["Fungus"] == "GBAus27b"
     m4 = df2["Fungus"] == "NVP64"
-    df3 = fern_data.replace({
-        "GBAus27b+" : "+",
-        "GBAus27b-" : "-",
-        "NVP64+" : "+",
-        "NVP64-" : "-",
-    })
-    df3 = df3.groupby(["Fungus","Day of Picture"], as_index=False).mean()
+    df3 = fern_data.replace(
+        {
+            "GBAus27b+": "+",
+            "GBAus27b-": "-",
+            "NVP64+": "+",
+            "NVP64-": "-",
+        }
+    )
+    df3 = df3.groupby(["Fungus", "Day of Picture"], as_index=False).mean()
     m5 = df3["Fungus"] == "+"
     m6 = df3["Fungus"] == "-"
     m7 = df3["Fungus"] == "control"
 
-    plt.figure(figsize=(20,10))
+    plt.figure(figsize=(20, 10))
     plt.plot(
         df1[m1]["Day of Picture"],
         df1[m1]["Area"],
@@ -101,34 +146,34 @@ def create_figure1A(inputs, outputs):
     plt.plot(
         df2[m3]["Day of Picture"],
         df2[m3]["Area"],
-        color = "Green",
+        color="Green",
         ls="-",
         lw=3,
-        label="GBAus27b"
+        label="GBAus27b",
     )
     plt.plot(
         df2[m4]["Day of Picture"],
         df2[m4]["Area"],
-        color = "Green",
+        color="Green",
         ls="--",
         lw=3,
-        label="NVP64"
+        label="NVP64",
     )
     plt.plot(
         df3[m5]["Day of Picture"],
         df3[m5]["Area"],
-        color = "Goldenrod",
+        color="Goldenrod",
         ls="-",
         lw=3,
-        label="With Endobacteria"
+        label="With Endobacteria",
     )
     plt.plot(
         df3[m6]["Day of Picture"],
         df3[m6]["Area"],
-        color = "Goldenrod",
+        color="Goldenrod",
         ls="--",
         lw=3,
-        label="Without Endobacteria"
+        label="Without Endobacteria",
     )
     plt.plot(
         df3[m7]["Day of Picture"],
@@ -136,13 +181,13 @@ def create_figure1A(inputs, outputs):
         color="black",
         ls="-",
         lw=3,
-        label="Control"
+        label="Control",
     )
 
     plt.title("Fern Growth Among Different Groups", size=32)
     plt.ylabel("Area cm$^{2}$", size=22)
     plt.xlabel("Day after sowing", size=22)
-    plt.legend(prop={'size':18})
+    plt.legend(prop={"size": 18})
 
     plt.savefig(outputs + "Graphs/figure1A.png", dpi=400)
 
@@ -231,23 +276,24 @@ def create_figure1(inputs, outputs):
         ls="--",
         color="purple",
         label="NVP64- I7",
-        lw = 3
+        lw=3,
     )
     plt.plot(
         df2[m9]["Day of Picture"],
         df2[m9]["Area"],
-        ls = ":",
-        color = "black",
-        label = "Control",
-        lw = 3
+        ls=":",
+        color="black",
+        label="Control",
+        lw=3,
     )
 
     plt.title("Fern Growth Among Different Groups", size=32)
     plt.ylabel("Area cm$^{2}$", size=22)
     plt.xlabel("Day after sowing", size=22)
-    plt.legend(prop={'size':18})
+    plt.legend(prop={"size": 18})
 
     plt.savefig(outputs + "Graphs/figure1.png", dpi=400)
+
 
 def create_figure2(inputs, outputs):
     fern_data = pd.read_csv(outputs + "fern_growth.csv")
@@ -255,12 +301,13 @@ def create_figure2(inputs, outputs):
     fern_data.fillna("none", inplace=True)
     df = fern_data.groupby("Endobacteria", as_index=False).mean()
 
-    plt.figure(figsize=(7.5,7.5))
-    plt.bar(["With Endobacteria", "Without Endobacteria","Control"], df["Area"])
+    plt.figure(figsize=(7.5, 7.5))
+    plt.bar(["With Endobacteria", "Without Endobacteria", "Control"], df["Area"])
     plt.ylabel("Area cm$^{2}$", size=18)
     plt.xlabel("Endobacteria Status", size=18)
     plt.title("Effect of Fungus Endobacteria on Fern Growth", size=22)
     plt.savefig(outputs + "Graphs/figure2.png", dpi=400)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -274,3 +321,4 @@ if __name__ == "__main__":
     create_figure2(inputs, outputs)
     create_figure1A(inputs, outputs)
     create_figure2A(inputs, outputs)
+    create_figure3A(inputs, outputs)

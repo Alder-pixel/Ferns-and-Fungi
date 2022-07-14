@@ -116,4 +116,4 @@ if __name__ == "__main__":
     if recreate == "No":
         growth_df = pd.concat([ferndf, growth_df])
     print(growth_df)  # Good for checking that it actually worked
-    growth_df.to_csv(output_file)
+    growth_df.to_csv(output_file, index=False)
