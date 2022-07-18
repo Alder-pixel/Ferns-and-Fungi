@@ -13,18 +13,23 @@ def find_area(directory, picture, project_directory):
     # Included in the image.
     img = mpimg.imread(directory + picture)
     image_copy = img.copy()
-    black_mask = np.sum(img, axis=2) < 120  # MAGIC: I looked at a histogram of
-    # the brightness to choose this threshold.
+    black_mask = (np.sum(img, axis=2) < 120) & (img[:,:,1] < 40)  
+    # MAGIC: I looked at a histogram of the brightness to choose this threshold.
+    # The part that requires the image to have less green is for later images
+    # where the ferns become denser and darker.
+    
     image_copy[black_mask] = 255  # Makes it white. My code fo find the green
     # values also picks up on very dark values.
 
     # Picks the green values pixels based on the following logic:
     # You can't both have red be more than 25% of green as well
     # as blue being more than 25% of green.
+    # It also removes any blue value that gets too high because otherwise the
+    # shadows on the agar get mixed in.
     # The mask gets inverted because there isn't a symbol for nand.
     green_mask = (1.2 * image_copy[:, :, 0] > image_copy[:, :, 1]) & (
         1.2 * image_copy[:, :, 2] > image_copy[:, :, 1]
-    )
+    ) | (image_copy[:,:,2] > 50)
     green_mask = np.invert(green_mask)
 
     #  Save the images to check if they make sense.

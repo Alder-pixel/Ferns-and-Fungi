@@ -20,6 +20,132 @@ def display_data(inputs, outputs):
         ).mean()
     )
 
+def create_figure5A(inputs, outputs):
+    fern_data = pd.read_csv(outputs + "fern_growth.csv")
+    fern_data = fern_data[fern_data["Replicate Number"] != "R4"]
+    df = fern_data.replace(
+        {
+            "GBAus27b+": "GBAus27b",
+            "GBAus27b-": "GBAus27b",
+            "control": "None",
+            "NVP64+": "NVP64",
+            "NVP64-": "NVP64",
+        }
+    )
+    df2 = df.groupby(["Fungus", "Inoculation time"], as_index=False).mean()
+    df2["Name"] = df2["Fungus"] + "_" + df2["Inoculation time"]
+    df2["Color"] = df2["Fungus"].replace({"GBAus27b":"Red", "NVP64":"Purple"})
+    # I added the code to color by fungus type, but it looked terrible.
+    df3 = df2.sort_values(by=["Inoculation time", "Fungus"])
+    heights = df3["Area"].values
+
+    plt.figure(figsize=(15,10))
+    plt.bar(df3["Name"], df3["Area"])
+    plt.title("Fern Growth by Fungus and Inoculation time", size=32)
+    plt.xlabel("Fungi and Inoculation time", size=22)
+    plt.ylabel("Average Coverage cm$^{2}$", size=22)
+    plt.text(x=1,y=heights[1]+.04,size=18,ha="center",
+             s="+"+str(round(100*(heights[1]/heights[0]-1),1))+"%")
+    plt.text(x=3,y=heights[3]+.04,size=18,ha="center",
+             s="+"+str(round(100*(heights[3]/heights[2]-1),1))+"%")
+    plt.savefig(outputs + "Graphs/figure5A.png", dpi=400)
+
+
+def create_figure4A(inputs, outputs):
+    fern_data = pd.read_csv(outputs + "fern_growth.csv")
+    fern_data = fern_data[fern_data["Replicate Number"] != "R4"]
+    fern_data = fern_data[fern_data["Fungus"] != "control"]
+    fern_data["Inoculation day"] = fern_data["Inoculation time"].str[-1].values.astype(int)
+    fern_data["Day after"] = fern_data["Day of Picture"] - fern_data["Inoculation day"]
+
+    df = fern_data.groupby(
+        ["Fungus", "Inoculation time", "Day of Picture"], as_index=False
+    ).mean()
+
+    plt.figure(figsize=(20, 10))
+    # Create the masks
+    m1 = (df["Fungus"] == "GBAus27b+") & (df["Inoculation time"] == "I0")
+    m2 = (df["Fungus"] == "GBAus27b+") & (df["Inoculation time"] == "I7")
+    m3 = (df["Fungus"] == "GBAus27b-") & (df["Inoculation time"] == "I0")
+    m4 = (df["Fungus"] == "GBAus27b-") & (df["Inoculation time"] == "I7")
+    m5 = (df["Fungus"] == "NVP64+") & (df["Inoculation time"] == "I0")
+    m6 = (df["Fungus"] == "NVP64+") & (df["Inoculation time"] == "I7")
+    m7 = (df["Fungus"] == "NVP64-") & (df["Inoculation time"] == "I0")
+    m8 = (df["Fungus"] == "NVP64-") & (df["Inoculation time"] == "I7")
+
+    # Create the plots
+    plt.plot(
+        df[m1]["Day after"],
+        df[m1]["Area"],
+        ls="-",
+        color="red",
+        label="GBAus27b+ I0",
+        lw=5,
+    )
+    plt.plot(
+        df[m2]["Day after"],
+        df[m2]["Area"],
+        ls="-",
+        color="red",
+        label="GBAus27b+ I7",
+        lw=3,
+    )
+    plt.plot(
+        df[m3]["Day after"],
+        df[m3]["Area"],
+        ls="--",
+        color="red",
+        label="GBAus27b- I0",
+        lw=5,
+    )
+    plt.plot(
+        df[m4]["Day after"],
+        df[m4]["Area"],
+        ls="--",
+        color="red",
+        label="GBAus27b- I7",
+        lw=2,
+    )
+    plt.plot(
+        df[m5]["Day after"],
+        df[m5]["Area"],
+        ls="-",
+        color="purple",
+        label="NVP64+ I0",
+        lw=5,
+    )
+    plt.plot(
+        df[m6]["Day after"],
+        df[m6]["Area"],
+        ls="-",
+        color="purple",
+        label="NVP64+ I7",
+        lw=2,
+    )
+    plt.plot(
+        df[m7]["Day after"],
+        df[m7]["Area"],
+        ls="--",
+        color="purple",
+        label="NVP64- I0",
+        lw=5,
+    )
+    plt.plot(
+        df[m8]["Day after"],
+        df[m8]["Area"],
+        ls="--",
+        color="purple",
+        label="NVP64- I7",
+        lw=3,
+    )
+
+    plt.title("Fern Growth Measured from Inoculation", size=32)
+    plt.ylabel("Area cm$^{2}$", size=22)
+    plt.xlabel("Day after inoculation", size=22)
+    plt.legend(prop={"size": 18})
+
+    plt.savefig(outputs + "Graphs/figure4A.png", dpi=400)
+
 
 def create_figure3A(inputs, outputs):
     fern_data = pd.read_csv(outputs + "fern_growth.csv")
@@ -33,11 +159,11 @@ def create_figure3A(inputs, outputs):
     m4 = df1["Replicate Number"] == "R4"
 
     plt.figure(figsize=(15, 5))
-    plt.scatter(df[m1]["Group"], df1[m1]["Area"], color="black", label="Replicate 1-3")
-    plt.scatter(df[m2]["Group"], df1[m2]["Area"], color="black")
-    plt.scatter(df[m3]["Group"], df1[m3]["Area"], color="black")
+    plt.scatter(df1[m1]["Group"], df1[m1]["Area"], color="black", label="Replicate 1-3")
+    plt.scatter(df1[m2]["Group"], df1[m2]["Area"], color="black")
+    plt.scatter(df1[m3]["Group"], df1[m3]["Area"], color="black")
     plt.scatter(
-        df[m4]["Group"],
+        df1[m4]["Group"],
         df1[m4]["Area"],
         color="red",
         marker="x",
@@ -64,7 +190,7 @@ def create_figure2A(inputs, outputs):
     plt.bar(df2["Endobacteria"], df2["Area"])
     plt.xlabel("Endobacteria Status", size=22)
     plt.ylabel("Average Coverage cm$^{2}$", size=22)
-    plt.ylim([0, 6.5])  # MAGIC: Will need to change as more data comes in.
+    plt.ylim([0, 6.25])  # MAGIC: Will need to change as more data comes in.
 
     df3 = df1.groupby("Inoculation time", as_index=False).mean()
     df3.replace({"I0": "Day 0", "I7": "Day 7", "Control": "Never"}, inplace=True)
@@ -72,7 +198,7 @@ def create_figure2A(inputs, outputs):
     plt.bar(df3["Inoculation time"], df3["Area"])
     plt.xlabel("Time of Inoculation", size=22)
     # plt.ylabel("Average Coverage cm$^{2}$", size=22)
-    plt.ylim([0, 6.5])  # MAGIC: Will need to change as more data comes in.
+    plt.ylim([0, 6.25])  # MAGIC: Will need to change as more data comes in.
 
     df4 = df1.replace(
         {
@@ -87,7 +213,7 @@ def create_figure2A(inputs, outputs):
     plt.subplot(1, 3, 3)
     plt.bar(df4["Fungus"], df4["Area"])
     plt.xlabel("Plates Inoculated With", size=22)
-    plt.ylim([0, 6.5])  # MAGIC: Will need to change as more data comes in.
+    plt.ylim([0, 6.25])  # MAGIC: Will need to change as more data comes in.
 
     plt.suptitle("Effect of different factors on fern growth rate", size=32)
     plt.savefig(outputs + "Graphs/figure2A.png", dpi=400)
@@ -287,6 +413,7 @@ def create_figure1(inputs, outputs):
         lw=3,
     )
 
+    plt.grid(axis='y')
     plt.title("Fern Growth Among Different Groups", size=32)
     plt.ylabel("Area cm$^{2}$", size=22)
     plt.xlabel("Day after sowing", size=22)
@@ -322,3 +449,5 @@ if __name__ == "__main__":
     create_figure1A(inputs, outputs)
     create_figure2A(inputs, outputs)
     create_figure3A(inputs, outputs)
+    create_figure4A(inputs, outputs)
+    create_figure5A(inputs, outputs)
