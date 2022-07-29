@@ -2,23 +2,262 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse
+import matplotlib.font_manager as font_manager
 
-
-def display_data(inputs, outputs):
+def create_figure8A(inputs, outputs):
     fern_data = pd.read_csv(outputs + "fern_growth.csv")
-
-    # Drop the fourth replicate. Almost all of my fourth replicates dried up,
-    # either due to being positioned near the front or being poured earlier.
     fern_data = fern_data[fern_data["Replicate Number"] != "R4"]
+    fern_data = fern_data[fern_data["Day of Picture"] == 18]
+    fern_data["Group"] = fern_data["Fungus"] + "_" + fern_data["Inoculation time"]
+    fern_data.fillna("Control", inplace=True)
+    df = fern_data.groupby("Group", as_index=False).mean()
 
-    print(fern_data)
-    print(fern_data.groupby("Fungus").mean())
-    print(fern_data.groupby("Inoculation time").mean())
-    print(
-        fern_data.groupby(
-            ["Fungus", "Inoculation time", "Day of Picture"], as_index=False
-        ).mean()
-    )
+    plt.figure(figsize=(15,8))
+    plt.bar(df["Group"], df["Area"])
+    plt.title("Comparing to the Control", size=18)
+    plt.ylabel("Fern Coverage cm$^{2}$\n18 Days after Sowing", size=18)
+    
+    i = 0
+    values = df["Area"].values
+    for value in values:
+        plt.text(i,value+.1,str(round(value/values[0],1))+"x",size=18,ha='center')
+        i+=1
+
+    avg = df[df["Group"] != "Control"]["Area"].mean()
+    plt.axhline(y=avg, color="Purple", ls="--")
+    plt.text(0,avg+.2,"Average for all\ninoculations",
+             size=18,ha='center',color="Purple")
+
+
+    plt.tight_layout()
+    plt.savefig(outputs + "Graphs/figure8A.png", dpi=600)
+
+def create_figure7A(inputs, outputs):
+    fern_data = pd.read_csv(outputs + "fern_growth.csv")
+    fern_data = fern_data[fern_data["Replicate Number"] != "R4"]
+    labels = []
+    values = []
+    
+    mask = (fern_data["Fungus"] == 'control') & (fern_data["Day of Picture"] == 18)
+    labels.append("Control")
+    values.append(fern_data[mask]["Area"].mean())
+
+    mask = (fern_data["Fungus"].str[:-1] == 'NVP64') & (fern_data["Day of Picture"] == 18)
+    labels.append("NVP64")
+    values.append(fern_data[mask]["Area"].mean())
+    
+    mask = (fern_data["Fungus"].str[:-1] == 'GBAus27b') & (fern_data["Day of Picture"] == 18)
+    labels.append("GBAus27b")
+    values.append(fern_data[mask]["Area"].mean())
+
+    mask = (fern_data["Inoculation time"] == 'I0') & (fern_data["Day of Picture"] == 18)
+    labels.append("Inoculated T0")
+    values.append(fern_data[mask]["Area"].mean())
+
+    mask = (fern_data["Inoculation time"] == 'I7') & (fern_data["Day of Picture"] == 18)
+    labels.append("Inoculated T7")
+    values.append(fern_data[mask]["Area"].mean())
+
+    mask = (fern_data["Endobacteria"] == '+') & (fern_data["Day of Picture"] == 18)
+    labels.append("Endobacteria Present")
+    values.append(fern_data[mask]["Area"].mean())
+
+    mask = (fern_data["Endobacteria"] == '-') & (fern_data["Day of Picture"] == 18)
+    labels.append("Endobacteria Absent")
+    values.append(fern_data[mask]["Area"].mean())
+
+    plt.figure(figsize=(15,8))
+    plt.bar(labels, values)
+    plt.title("Comparing to the Control", size=18)
+    plt.ylabel("Fern Coverage cm$^{2}$\n18 Days after Sowing", size=18)
+    i = 0
+    for value in values:
+        plt.text(i,value+.1,str(round(value/values[0],1))+"x",size=18,ha='center')
+        i+=1
+
+    mask = (fern_data["Fungus"] != 'control') & (fern_data["Day of Picture"] == 18)
+    avg = fern_data[mask]["Area"].mean()
+    plt.axhline(y=avg, color="Purple", ls="--")
+    plt.text(0,avg+.2,"Average for all\ninoculations",
+             size=18,ha='center',color="Purple")
+
+
+    plt.tight_layout()
+    plt.savefig(outputs + "Graphs/figure7A.png", dpi=600)
+
+def show_difference(df, e_mask):
+    e_top = df[e_mask]["Area"].max()
+    e_bot = df[e_mask]["Area"].min()
+    e_height = df[e_mask]["Area"].mean()
+    e_range = e_top - e_bot
+    plt.errorbar(18.5, e_height, yerr=e_range/2, color="black", capsize=10,
+                 zorder=5)
+    plt.text(18.75, e_height, "+" + str(round(e_top/e_bot * 100 - 100, 1)) + "%",
+             va="center", zorder = 4, size=18).set_bbox({"facecolor":"white",
+                                                "edgecolor":"white",
+                                                "boxstyle":"square,pad=.05"})
+
+def create_figure6A(inputs, outputs):
+    fern_data = pd.read_csv(outputs + "fern_growth.csv")
+    fern_data = fern_data[fern_data["Replicate Number"] != "R4"]
+    
+    plt.figure(figsize=(13,13))
+    plt.suptitle("Effect of different factors on fern growth rate", size=28)
+
+    # First examine endobacteria status
+    plt.subplot(3,2,1)
+    plt.grid(axis='y')
+    plt.title("Endobacteria", size=18)
+    plt.ylabel("Fern Coverage cm$^{2}$", size=18)
+    df1 = fern_data.replace({"+":"Present","-":"Absent"}).groupby(
+        ["Endobacteria", "Day of Picture"],as_index=False).mean()
+    m1 = df1["Endobacteria"] == "Present"
+    m2 = df1["Endobacteria"] == "Absent"
+    plt.plot(df1[m1]["Day of Picture"], df1[m1]["Area"], ls="-", color="Black",
+            label="Present")
+    plt.plot(df1[m2]["Day of Picture"], df1[m2]["Area"], ls="--",
+             color="Black", label="Absent")
+    plt.legend()
+    """
+    plt.xlim([None, 19])
+    e_mask = (df1["Day of Picture"] == 18)
+    show_difference(df1, e_mask)
+    """
+
+    # Second, examine time of inoculation
+    plt.subplot(3,2,2)
+    plt.grid(axis='y')
+    plt.title("Time of Inoculation", size=18)
+    df2 = fern_data.groupby(["Inoculation time", "Day of Picture"],
+                            as_index=False).mean()
+    m3 = df2["Inoculation time"] == "I0"
+    m4 = df2["Inoculation time"] == "I7"
+    plt.plot(df2[m3]["Day of Picture"], df2[m3]["Area"], lw=5, color="Black",
+             label="Inoculated T0")
+    plt.plot(df2[m4]["Day of Picture"], df2[m4]["Area"], lw=2, color="Black",
+             label="Inoculated T7")
+    plt.legend()
+
+    plt.xlim([None, 19])
+    e_mask = (df2["Day of Picture"] == 18)
+    show_difference(df2, e_mask)
+
+    # Third, examine type of fungus
+    plt.subplot(3,2,3)
+    plt.grid(axis='y')
+    plt.title("Fungus", size=18)
+    plt.ylabel("Fern Coverage cm$^{2}$", size=18)
+    df3 = fern_data.copy()
+    df3 = df3[df3["Fungus"] != "control"]
+    df3["Fungus"] = df3["Fungus"].str[:-1]
+    df3 = df3.groupby(["Fungus", "Day of Picture"], as_index=False).mean()
+    m5 = df3["Fungus"] == "GBAus27b"
+    m6 = df3["Fungus"] == "NVP64"
+    plt.plot(df3[m5]["Day of Picture"], df3[m5]["Area"], color="Red",
+             label="GBAus27b")
+    plt.plot(df3[m6]["Day of Picture"], df3[m6]["Area"], color="Purple",
+             label="NVP64")
+    plt.legend()
+
+    plt.xlim([None, 19])
+    e_mask = (df3["Day of Picture"] == 18)
+    show_difference(df3, e_mask)
+
+    # Fourth, fungus + inoculation
+    plt.subplot(3,2,4)
+    plt.grid(axis='y')
+    plt.title("Fungus + Time of Inoculation", size=18)
+    df4 = fern_data.copy()
+    df4["Fungus"] = df4["Fungus"].str[:-1]
+    df4 = df4.groupby(["Fungus", "Inoculation time", "Day of Picture"],
+                      as_index=False).mean()
+    m7 = (df4["Fungus"] == "GBAus27b") & (df4["Inoculation time"] == "I0")
+    m8 = (df4["Fungus"] == "GBAus27b") & (df4["Inoculation time"] == "I7")
+    m9 = (df4["Fungus"] == "NVP64") & (df4["Inoculation time"] == "I0")
+    m10 = (df4["Fungus"] == "NVP64") & (df4["Inoculation time"] == "I7")
+    plt.plot(df4[m7]["Day of Picture"], df4[m7]["Area"], color="Red", lw=5,
+             label="GBAus27b I0")
+    plt.plot(df4[m8]["Day of Picture"], df4[m8]["Area"], color="Red", lw=2,
+            label="GBAus27b I7")
+    plt.plot(df4[m9]["Day of Picture"], df4[m9]["Area"], color="Purple", lw=5,
+            label="NVP64 I0")
+    plt.plot(df4[m10]["Day of Picture"], df4[m10]["Area"], color="Purple",
+             lw=2, label="NVP64 I7")
+    plt.legend()
+
+    plt.xlim([None, 19])
+    e_mask = (df4["Inoculation time"] == "I7") & (df4["Day of Picture"] == 18)
+    show_difference(df4, e_mask)
+    e_mask = (df4["Inoculation time"] == "I0") & (df4["Day of Picture"] == 18)
+    show_difference(df4, e_mask)
+
+    # Fifth, Endobacteria and Fungus
+    plt.subplot(3,2,5)
+    plt.grid(axis='y')
+    plt.title("Endobacteria + Fungus", size=18)
+    plt.xlabel("Days after Sowing", size=18)
+    plt.ylabel("Fern Coverage cm$^{2}$", size=18)
+    df5 = fern_data.copy()
+    df5["Fungus"] = df5["Fungus"].str[:-1]
+    df5 = df5.groupby(["Fungus", "Endobacteria", "Day of Picture"],
+                      as_index=False).mean()
+    m11 = (df5.Fungus == "GBAus27b") & (df5.Endobacteria == "+")
+    m12 = (df5.Fungus == "GBAus27b") & (df5.Endobacteria == "-")
+    m13 = (df5.Fungus == "NVP64") & (df5.Endobacteria == "+")
+    m14 = (df5.Fungus == "NVP64") & (df5.Endobacteria == "-")
+    plt.plot(df5[m11]["Day of Picture"], df5[m11]["Area"], color="Red", ls="-",
+            label="GBAus27b+")
+    plt.plot(df5[m12]["Day of Picture"], df5[m12]["Area"], color="Red",
+             ls="--", label="Gbaus27b-")
+    plt.plot(df5[m13]["Day of Picture"], df5[m13]["Area"], color="Purple",
+             ls="-", label="NVP64+")
+    plt.plot(df5[m14]["Day of Picture"], df5[m14]["Area"], color="Purple",
+             ls="--", label="NVP64-")
+    plt.legend()
+
+    # All factors: Fungus, Endobacteria, Inoculation time
+    plt.subplot(3,2,6)
+    plt.grid(axis='y')
+    plt.title("All factors", size=18)
+    plt.xlabel("Days after Sowing", size=18)
+    df6 = fern_data.copy()
+    df6["Fungus"] = df6["Fungus"].str[:-1]
+    df6 = df6.groupby(["Fungus", "Endobacteria", "Inoculation time", "Day of Picture"],
+                      as_index=False).mean()
+    m1 = (df6["Fungus"] == "GBAus27b") & (df6["Endobacteria"] == "+") & (df6["Inoculation time"] == "I0")
+    m2 = (df6["Fungus"] == "GBAus27b") & (df6["Endobacteria"] == "-") & (df6["Inoculation time"] == "I0")
+    m3 = (df6["Fungus"] == "GBAus27b") & (df6["Endobacteria"] == "+") & (df6["Inoculation time"] == "I7")
+    m4 = (df6["Fungus"] == "GBAus27b") & (df6["Endobacteria"] == "-") & (df6["Inoculation time"] == "I7")
+    m5 = (df6["Fungus"] == "NVP64") & (df6["Endobacteria"] == "+") & (df6["Inoculation time"] == "I0")
+    m6 = (df6["Fungus"] == "NVP64") & (df6["Endobacteria"] == "-") & (df6["Inoculation time"] == "I0")
+    m7 = (df6["Fungus"] == "NVP64") & (df6["Endobacteria"] == "+") & (df6["Inoculation time"] == "I7")
+    m8 = (df6["Fungus"] == "NVP64") & (df6["Endobacteria"] == "-") & (df6["Inoculation time"] == "I7")
+    plt.plot(df6[m1]["Day of Picture"], df6[m1]["Area"], color="Red", ls="-",
+             lw=5, label="GABaus27b+ I0")
+    plt.plot(df6[m2]["Day of Picture"], df6[m2]["Area"], color="Red", ls="--",
+             lw=5, label="GBAus27b- I0")
+    plt.plot(df6[m3]["Day of Picture"], df6[m3]["Area"], color="Red", ls="-",
+             lw=2, label="GBAus27b+ I7")
+    plt.plot(df6[m4]["Day of Picture"], df6[m4]["Area"], color="Red", ls="--",
+             lw=2, label="GBAus27b- I7")
+    plt.plot(df6[m5]["Day of Picture"], df6[m5]["Area"], color="Purple",
+             ls="-", lw=5, label="NVP64+ I0")
+    plt.plot(df6[m6]["Day of Picture"], df6[m6]["Area"], color="Purple",
+             ls="--", lw=5, label="NVP64- I0")
+    plt.plot(df6[m7]["Day of Picture"], df6[m7]["Area"], color="Purple",
+             ls="-", lw=2, label="NVP64+ I7")
+    plt.plot(df6[m8]["Day of Picture"], df6[m8]["Area"], color="Purple",
+             ls="--", lw=2, label="NVP64- I7")
+    df7 = fern_data.copy()
+    df7 = df7[df7["Fungus"] == "control"]
+    df7 = df7.groupby(["Day of Picture"], as_index=False).mean()
+    plt.plot(df7["Day of Picture"], df7["Area"], color="Black", ls=":",
+             label="Control", lw=2)
+
+    plt.legend() 
+
+    plt.tight_layout()
+    plt.savefig(outputs + "Graphs/figure6A.png", dpi=600)
 
 def create_figure5A(inputs, outputs):
     fern_data = pd.read_csv(outputs + "fern_growth.csv")
@@ -39,14 +278,14 @@ def create_figure5A(inputs, outputs):
     df3 = df2.sort_values(by=["Inoculation time", "Fungus"])
     heights = df3["Area"].values
 
-    plt.figure(figsize=(15,10))
+    plt.figure(figsize=(15,6))
     plt.bar(df3["Name"], df3["Area"])
     plt.title("Fern Growth by Fungus and Inoculation time", size=32)
     plt.xlabel("Fungi and Inoculation time", size=22)
     plt.ylabel("Average Coverage cm$^{2}$", size=22)
-    plt.text(x=1,y=heights[1]+.04,size=18,ha="center",
+    plt.text(x=1,y=heights[1]+.04,size=16,ha="center",
              s="+"+str(round(100*(heights[1]/heights[0]-1),1))+"%")
-    plt.text(x=3,y=heights[3]+.04,size=18,ha="center",
+    plt.text(x=3,y=heights[3]+.04,size=16,ha="center",
              s="+"+str(round(100*(heights[3]/heights[2]-1),1))+"%")
     plt.savefig(outputs + "Graphs/figure5A.png", dpi=400)
 
@@ -157,11 +396,13 @@ def create_figure3A(inputs, outputs):
     m2 = df1["Replicate Number"] == "R2"
     m3 = df1["Replicate Number"] == "R3"
     m4 = df1["Replicate Number"] == "R4"
-
-    plt.figure(figsize=(15, 5))
+    
+    plt.figure(figsize=(15, 7*5.46/5.84))
     plt.scatter(df1[m1]["Group"], df1[m1]["Area"], color="black", label="Replicate 1-3")
     plt.scatter(df1[m2]["Group"], df1[m2]["Area"], color="black")
     plt.scatter(df1[m3]["Group"], df1[m3]["Area"], color="black")
+    
+    """
     plt.scatter(
         df1[m4]["Group"],
         df1[m4]["Area"],
@@ -170,12 +411,13 @@ def create_figure3A(inputs, outputs):
         s=90,
         label="Replicate 4",
     )
-
-    plt.legend()
+    """
+    # plt.legend()
     plt.xlabel("Group", size=22)
     plt.ylabel("Avg Coverage cm$^{2}$", size=22)
-    plt.title("Replicate 4 was dropped", size=22)
-
+    plt.title("Growth of Every Replicate", size=22)
+    plt.xticks(fontsize=22, rotation=30)
+    plt.tight_layout()
     plt.savefig(outputs + "Graphs/figure3A.png", dpi=400)
 
 
@@ -444,10 +686,21 @@ if __name__ == "__main__":
     inputs = args.inputs
     outputs = args.outputs
 
-    create_figure1(inputs, outputs)
-    create_figure2(inputs, outputs)
-    create_figure1A(inputs, outputs)
-    create_figure2A(inputs, outputs)
-    create_figure3A(inputs, outputs)
-    create_figure4A(inputs, outputs)
-    create_figure5A(inputs, outputs)
+    # Find and set the font to times new roman.
+    for font in font_manager.findSystemFonts(fontpaths=None,
+                                                        fontext='ttf'):
+        if font.split("/")[-1] in ["NotoColorEmoji.ttf"]:
+            continue
+        font_manager.fontManager.addfont(font)
+    plt.rcParams['font.family'] = 'Times New Roman'
+
+    #create_figure1(inputs, outputs)
+    #create_figure2(inputs, outputs)
+    #create_figure1A(inputs, outputs)
+    #create_figure2A(inputs, outputs)
+    #create_figure3A(inputs, outputs)
+    #create_figure4A(inputs, outputs)
+    #create_figure5A(inputs, outputs)
+    create_figure6A(inputs, outputs)
+    create_figure7A(inputs, outputs)
+    create_figure8A(inputs, outputs)
